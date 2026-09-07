@@ -1,226 +1,841 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>English Class Online</title>
-<style>
-:root{
-  --navy:#1e3350;--navy2:#314a68;--sage:#6e8f71;--sage2:#e7efe7;
-  --gold:#d9a441;--coral:#c1554d;--paper:#fffdf8;--bg:#eef1ed;
-  --line:#dcd6c6;--muted:#65758a;--white:#fff;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--navy)}
-button,input,textarea,select{font:inherit}
-button{cursor:pointer}
-.hidden{display:none!important}
-.app{min-height:100vh}
-.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,var(--navy),#526b61);padding:20px}
-.login-card{width:min(430px,100%);background:var(--paper);padding:34px;border-radius:18px;box-shadow:0 20px 60px #0005}
-.badge{display:inline-block;background:var(--gold);padding:6px 10px;border-radius:6px;font-size:11px;font-weight:800;letter-spacing:.5px}
-h1,h2,h3{margin:0}
-.login h1{font-size:30px;margin:14px 0 8px}
-.muted{color:var(--muted);font-size:14px;line-height:1.55}
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:22px 0 14px}
-.btn{border:0;border-radius:9px;padding:11px 15px;font-weight:700}
-.btn.primary{background:var(--navy);color:white}.btn.sage{background:var(--sage);color:white}
-.btn.gold{background:var(--gold);color:#30250b}.btn.ghost{background:white;color:var(--navy);border:1px solid var(--line)}
-.btn.danger{background:#fff0ee;color:var(--coral);border:1px solid #f0c8c3}
-.btn.full{width:100%}
-.field{margin:10px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
-.input,.textarea,.select{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px;background:white;color:var(--navy);outline:none}
-.textarea{min-height:95px;resize:vertical}
-.input:focus,.textarea:focus,.select:focus{border-color:var(--sage);box-shadow:0 0 0 3px #6e8f7122}
-.top{min-height:100vh;display:flex}
-.sidebar{width:230px;background:var(--navy);color:white;padding:25px 14px;flex-shrink:0}
-.brand{padding:0 10px 25px}.brand small{opacity:.7}.brand h2{margin-top:4px;font-size:20px}
-.user{font-size:13px;opacity:.75;margin-top:5px}
-.nav{display:grid;gap:8px}.nav button{border:0;background:transparent;color:white;text-align:left;padding:12px;border-radius:9px;font-weight:700;opacity:.75}
-.nav button.active,.nav button:hover{background:#ffffff18;opacity:1}
-.main{flex:1;padding:24px;overflow:auto}
-.page{max-width:1050px;margin:auto;background:var(--paper);min-height:calc(100vh - 48px);border:1px solid var(--line);border-radius:16px;padding:28px}
-.header{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:20px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.card{background:white;border:1px solid var(--line);border-radius:12px;padding:17px}
-.card h3{font-size:17px}.card p{white-space:pre-wrap}
-.form-card{margin-bottom:20px;background:#faf9f3}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.meta{font-size:12px;color:#8a95a0;margin-top:7px}
-.link{color:var(--sage);font-weight:700;text-decoration:none}
-.empty{padding:20px;background:#f5f5ef;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
-.tabs{display:flex;gap:8px;margin-bottom:18px}.tabs button{border:1px solid var(--line);background:white;border-radius:8px;padding:9px 13px}.tabs button.active{background:var(--navy);color:white}
-.submission{background:#f3f5f1;padding:13px;border-radius:9px;margin-top:10px}
-.score{font-size:20px;font-weight:800;color:var(--sage)}
-.notice{background:#fff7df;border:1px solid #ead18a;padding:12px;border-radius:9px;font-size:13px;margin-bottom:16px}
-@media(max-width:760px){
- .top{display:block}.sidebar{width:100%;padding:14px}.brand{padding:5px 8px 12px}.nav{grid-template-columns:repeat(3,1fr)}.nav button{padding:9px;font-size:12px}
- .main{padding:10px}.page{min-height:calc(100vh - 20px);padding:18px}.grid{grid-template-columns:1fr}.header{display:block}.header .actions{margin-top:12px}
-}
-</style>
-</head>
-<body>
-<div id="root"></div>
-<script>
-const KEY="english_class_online_v2";
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-const initial=()=>({teacher:null,materials:[],assignments:[],submissions:[]});
-let db=JSON.parse(localStorage.getItem(KEY)||"null")||initial();
-let session=null, roleTab="materi";
+<!doctype html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>English Class Online</title><script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script><script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script><script src="https://unpkg.com/@babel/standalone/babel.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body style="margin:0"><div id="root"></div><script type="text/babel">const { useState, useEffect, useCallback } = React;
+const XLSX = window.XLSX;
+const BookOpen = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "▣");
+const ClipboardList = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "☷");
+const Award = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "★");
+const LogOut = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "↪");
+const Plus = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "+");
+const Trash2 = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "×");
+const Send = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "➤");
+const CheckCircle2 = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "✓");
+const Download = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "↓");
+const RefreshCw = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "↻");
+const LinkIcon = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "↗");
+const Clock = (size = {}) => React.createElement("span", {style: {display:"inline-block", width: (size||14), textAlign:"center", fontSize:(size||14), lineHeight:1}}, "◷");
 
-function save(){localStorage.setItem(KEY,JSON.stringify(db))}
-function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function dateText(v){if(!v)return "-";return new Date(v).toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"})}
-function render(){session?renderApp():renderLogin()}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
-function renderLogin(){
-root.innerHTML=`<div class="login"><div class="login-card">
-<span class="badge">ENGLISH CLASS ONLINE</span>
-<h1>Ruang Belajar Bahasa Inggris</h1>
-<p class="muted">Materi, tugas, pengumpulan, dan nilai dalam satu tempat.</p>
-<div class="role-grid">
-<button class="btn sage" onclick="showStudent()">Saya Siswa</button>
-<button class="btn primary" onclick="showTeacher()">Saya Guru</button>
-</div>
-<div id="loginForm"></div>
-</div></div>`;
-}
-function showStudent(){
-document.getElementById("loginForm").innerHTML=`<div class="field"><label>Nama lengkap</label><input id="sname" class="input" placeholder="Contoh: Ahmad Fauzan"></div>
-<button class="btn gold full" onclick="studentLogin()">Masuk sebagai Siswa →</button>`;
-}
-function showTeacher(){
-const exists=!!db.teacher;
-document.getElementById("loginForm").innerHTML=exists?`
-<div class="field"><label>Email guru</label><input id="temail" class="input" type="email" placeholder="email@sekolah.com"></div>
-<div class="field"><label>Password</label><input id="tpass" class="input" type="password" placeholder="Password"></div>
-<div id="err" class="muted" style="color:var(--coral);margin:8px 0"></div>
-<button class="btn gold full" onclick="teacherLogin()">Masuk sebagai Guru →</button>
-<button class="btn ghost full" style="margin-top:8px" onclick="showRegister()">Ganti akun guru</button>`:`<div class="field"><label>Nama guru</label><input id="tname" class="input" placeholder="Nama lengkap"></div>
-<div class="field"><label>Email guru</label><input id="temail" class="input" type="email" placeholder="email@sekolah.com"></div>
-<div class="field"><label>Password</label><input id="tpass" class="input" type="password" placeholder="Minimal 6 karakter"></div>
-<button class="btn gold full" onclick="registerTeacher()">Buat akun guru →</button>`;
-}
-function showRegister(){
-document.getElementById("loginForm").innerHTML=`<div class="field"><label>Nama guru</label><input id="tname" class="input" placeholder="Nama lengkap"></div>
-<div class="field"><label>Email guru</label><input id="temail" class="input" type="email"></div>
-<div class="field"><label>Password</label><input id="tpass" class="input" type="password"></div>
-<button class="btn gold full" onclick="registerTeacher()">Simpan akun guru →</button>`;
-}
-function studentLogin(){
-const n=document.getElementById("sname").value.trim();if(!n)return alert("Masukkan nama lengkap.");
-session={role:"student",name:n};roleTab="materi";render();
-}
-function registerTeacher(){
-const name=document.getElementById("tname").value.trim(),email=document.getElementById("temail").value.trim().toLowerCase(),pass=document.getElementById("tpass").value;
-if(!name||!email.includes("@")||pass.length<6)return alert("Lengkapi data. Password minimal 6 karakter.");
-db.teacher={name,email,password:pass};save();session={role:"teacher",name};roleTab="materi";render();
-}
-function teacherLogin(){
-const e=document.getElementById("temail").value.trim().toLowerCase(),p=document.getElementById("tpass").value;
-if(!db.teacher||e!==db.teacher.email||p!==db.teacher.password){document.getElementById("err").textContent="Email atau password salah.";return}
-session={role:"teacher",name:db.teacher.name};roleTab="materi";render();
-}
-function logout(){session=null;render()}
+const fmtDate = (iso) => {
+  if (!iso) return "-";
+  try {
+    return new Date(iso).toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+};
 
-function shell(content,tabs){
-root.innerHTML=`<div class="top"><aside class="sidebar"><div class="brand"><small>English Class Online</small><h2>${session.role==="teacher"?"Panel Guru":"Panel Siswa"}</h2><div class="user">${esc(session.name)}</div></div>
-<div class="nav">${tabs.map(t=>`<button class="${roleTab===t[0]?"active":""}" onclick="roleTab='${t[0]}';renderApp()">${t[1]}</button>`).join("")}<button onclick="logout()">Keluar</button></div></aside>
-<main class="main"><section class="page">${content}</section></main></div>`;
+async function loadList(key) {
+  try {
+    const res = await window.storage.get(key, true);
+    if (!res) return [];
+    const val = JSON.parse(res.value);
+    return Array.isArray(val) ? val : [];
+  } catch {
+    return [];
+  }
 }
 
-function renderApp(){session.role==="teacher"?teacherApp():studentApp()}
-
-function teacherApp(){
-let c="";
-if(roleTab==="materi")c=teacherMaterials();
-if(roleTab==="tugas")c=teacherAssignments();
-if(roleTab==="nilai")c=teacherGrades();
-shell(c,[["materi","📚 Materi"],["tugas","📝 Tugas"],["nilai","🏆 Nilai"]]);
-}
-function teacherMaterials(){
-return `<div class="header"><div><h2>Materi Bahasa Inggris</h2><p class="muted">Bagikan bahan belajar untuk siswa.</p></div></div>
-<div class="card form-card"><div class="field"><label>Judul materi</label><input id="mtitle" class="input" placeholder="Contoh: Simple Present Tense"></div>
-<div class="field"><label>Penjelasan</label><textarea id="mdesc" class="textarea" placeholder="Ringkasan materi..."></textarea></div>
-<div class="field"><label>Link materi (opsional)</label><input id="mlink" class="input" placeholder="https://..."></div>
-<button class="btn sage" onclick="addMaterial()">+ Tambah materi</button></div>
-${db.materials.length?db.materials.map(m=>`<div class="card" style="margin-bottom:10px"><div class="header" style="margin:0"><div><h3>${esc(m.title)}</h3>${m.desc?`<p class="muted">${esc(m.desc)}</p>`:""}${m.link?`<a class="link" href="${esc(m.link)}" target="_blank" rel="noopener">Buka tautan ↗</a>`:""}<div class="meta">${dateText(m.date)}</div></div><button class="btn danger" onclick="deleteMaterial('${m.id}')">Hapus</button></div></div>`).join(""):`<div class="empty">Belum ada materi.</div>`}`;
-}
-function addMaterial(){
-const title=mtitle.value.trim(),desc=mdesc.value.trim(),link=mlink.value.trim();
-if(!title)return alert("Judul materi wajib diisi.");
-if(link&&!/^https?:\\/\\//i.test(link))return alert("Link harus diawali http:// atau https://");
-db.materials.unshift({id:uid(),title,desc,link,date:new Date().toISOString()});save();renderApp();
-}
-function deleteMaterial(id){if(confirm("Hapus materi ini?")){db.materials=db.materials.filter(x=>x.id!==id);save();renderApp()}}
-
-function teacherAssignments(){
-return `<div class="header"><div><h2>Tugas</h2><p class="muted">Buat tugas dan periksa jawaban siswa.</p></div></div>
-<div class="card form-card"><div class="field"><label>Judul tugas</label><input id="atitle" class="input" placeholder="Contoh: My Daily Activities"></div>
-<div class="field"><label>Instruksi</label><textarea id="adesc" class="textarea" placeholder="Tulis instruksi untuk siswa..."></textarea></div>
-<div class="field"><label>Tenggat</label><input id="adue" class="input" type="date"></div>
-<button class="btn gold" onclick="addAssignment()">+ Buat tugas</button></div>
-${db.assignments.length?db.assignments.map(a=>{
-const subs=db.submissions.filter(s=>s.assignmentId===a.id);
-return `<div class="card" style="margin-bottom:10px"><div class="header" style="margin:0"><div><h3>${esc(a.title)}</h3><p class="muted">${esc(a.desc)}</p><div class="meta">${a.due?"Tenggat: "+esc(a.due)+" · ":""}${subs.length} pengumpulan</div></div>
-<div class="actions"><button class="btn ghost" onclick="toggleSubs('${a.id}')">Lihat jawaban</button><button class="btn danger" onclick="deleteAssignment('${a.id}')">Hapus</button></div></div><div id="subs-${a.id}"></div></div>`;
-}).join(""):`<div class="empty">Belum ada tugas.</div>`}`;
-}
-function addAssignment(){
-const title=atitle.value.trim(),desc=adesc.value.trim(),due=adue.value;
-if(!title)return alert("Judul tugas wajib diisi.");
-db.assignments.unshift({id:uid(),title,desc,due,createdAt:new Date().toISOString()});save();renderApp();
-}
-function deleteAssignment(id){if(confirm("Hapus tugas dan semua pengumpulannya?")){db.assignments=db.assignments.filter(x=>x.id!==id);db.submissions=db.submissions.filter(x=>x.assignmentId!==id);save();renderApp()}}
-function toggleSubs(id){
-const box=document.getElementById("subs-"+id);
-const subs=db.submissions.filter(s=>s.assignmentId===id);
-box.innerHTML=subs.length?subs.map(s=>`<div class="submission"><div class="header" style="margin:0"><strong>${esc(s.studentName)}</strong><span class="meta">${dateText(s.submittedAt)}</span></div>
-<div style="white-space:pre-wrap;margin:8px 0">${esc(s.content)}</div>
-<div class="actions"><input id="score-${s.id}" class="input" style="width:90px" type="number" min="0" max="100" placeholder="Nilai" value="${s.score??""}"><input id="feed-${s.id}" class="input" placeholder="Catatan guru" value="${esc(s.feedback||"")}"><button class="btn primary" onclick="grade('${s.id}')">Simpan</button></div>
-${s.score!=null?`<div class="meta">Sudah dinilai</div>`:""}</div>`).join(""):`<div class="empty" style="margin-top:12px">Belum ada siswa yang mengumpulkan.</div>`;
-}
-function grade(id){
-const scoreEl=document.getElementById("score-"+id),feedEl=document.getElementById("feed-"+id),raw=scoreEl.value;
-if(raw!==""&&(Number(raw)<0||Number(raw)>100))return alert("Nilai harus 0–100.");
-const s=db.submissions.find(x=>x.id===id);if(!s)return;
-s.score=raw===""?null:Number(raw);s.feedback=feedEl.value.trim();s.gradedAt=new Date().toISOString();save();alert("Nilai tersimpan.");
+async function saveList(key, list) {
+  try {
+    await window.storage.set(key, JSON.stringify(list), true);
+  } catch (e) {
+    console.error("storage error", e);
+  }
 }
 
-function teacherGrades(){
-const rows=db.submissions.map(s=>{const a=db.assignments.find(x=>x.id===s.assignmentId);return {...s,assignmentTitle:a?.title||"Tugas dihapus"}});
-return `<div class="header"><div><h2>Rekap Nilai</h2><p class="muted">Lihat semua pengumpulan dan ekspor data.</p></div><button class="btn primary" onclick="exportCSV()">Ekspor Excel/CSV</button></div>
-${rows.length?`<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:10px">Siswa</th><th style="text-align:left;padding:10px">Tugas</th><th style="text-align:left;padding:10px">Nilai</th><th style="text-align:left;padding:10px">Status</th></tr></thead><tbody>${rows.map(r=>`<tr style="border-top:1px solid var(--line)"><td style="padding:10px">${esc(r.studentName)}</td><td style="padding:10px">${esc(r.assignmentTitle)}</td><td style="padding:10px">${r.score??"—"}</td><td style="padding:10px">${r.score!=null?"Dinilai":"Belum dinilai"}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">Belum ada pengumpulan.</div>`}`;
-}
-function exportCSV(){
-const rows=[["Nama Siswa","Tugas","Tanggal Kumpul","Nilai","Catatan","Status"],...db.submissions.map(s=>{const a=db.assignments.find(x=>x.id===s.assignmentId);return [s.studentName,a?.title||"Tugas dihapus",dateText(s.submittedAt),s.score??"",s.feedback||"",s.score!=null?"Sudah Dinilai":"Belum Dinilai"]})];
-const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\\n");
-const blob=new Blob(["\\ufeff"+csv],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="Nilai_English_"+new Date().toISOString().slice(0,10)+".csv";a.click();URL.revokeObjectURL(a.href);
+function App() {
+  const [role, setRole] = useState(null); // 'teacher' | 'student'
+  const [name, setName] = useState("");
+
+  if (!role) return <RoleGate onEnter={(r, n) => { setRole(r); setName(n); }} />;
+
+  return role === "teacher" ? (
+    <TeacherApp name={name} onLogout={() => setRole(null)} />
+  ) : (
+    <StudentApp name={name} onLogout={() => setRole(null)} />
+  );
 }
 
-function studentApp(){
-let c=roleTab==="materi"?studentMaterials():studentAssignments();
-shell(c,[["materi","📚 Materi"],["tugas","📝 Tugas"]]);
+/* ---------------------------- Shared chrome ---------------------------- */
+
+function GlobalStyle() {
+  return (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+      :root {
+        --ink: #1e3350;
+        --ink-soft: #4a5d78;
+        --paper: #f1f3ef;
+        --page: #fffdf8;
+        --sage: #6e8f71;
+        --sage-deep: #4f6f52;
+        --mustard: #d9a441;
+        --coral: #c1554d;
+        --rule: #dcd6c6;
+      }
+      * { box-sizing: border-box; }
+      .elc-root {
+        font-family: 'Inter', sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        min-height: 100%;
+        width: 100%;
+      }
+      .elc-root h1, .elc-root h2, .elc-root h3 {
+        font-family: 'Lora', serif;
+        margin: 0;
+        color: var(--ink);
+      }
+      .elc-btn {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        border: none;
+        border-radius: 6px;
+        padding: 9px 16px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+      }
+      .elc-btn:active { transform: scale(0.97); }
+      .elc-btn-primary { background: var(--ink); color: #fff; }
+      .elc-btn-primary:hover { box-shadow: 0 2px 0 rgba(30,51,80,0.35); }
+      .elc-btn-sage { background: var(--sage); color: #fff; }
+      .elc-btn-mustard { background: var(--mustard); color: #2a2109; }
+      .elc-btn-ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--rule); }
+      .elc-btn-danger { background: transparent; color: var(--coral); padding: 6px; }
+      .elc-input, .elc-textarea {
+        font-family: 'Inter', sans-serif;
+        width: 100%;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 9px 11px;
+        font-size: 14px;
+        background: #fff;
+        color: var(--ink);
+      }
+      .elc-textarea { resize: vertical; min-height: 80px; }
+      .elc-input:focus, .elc-textarea:focus {
+        outline: 2px solid var(--sage);
+        outline-offset: 1px;
+      }
+      .elc-page {
+        background: var(--page);
+        background-image: repeating-linear-gradient(
+          to bottom,
+          transparent,
+          transparent 30px,
+          var(--rule) 31px
+        );
+        border-left: 2px solid var(--coral);
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(30,51,80,0.08);
+        padding: 28px 30px 28px 34px;
+      }
+      .elc-tab {
+        font-family: 'Lora', serif;
+        font-weight: 600;
+        font-size: 15px;
+        border: none;
+        cursor: pointer;
+        padding: 13px 18px 13px 22px;
+        border-radius: 0 10px 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        color: #fff;
+        opacity: 0.72;
+        margin-bottom: 8px;
+        width: 100%;
+        text-align: left;
+      }
+      .elc-tab.active { opacity: 1; transform: translateX(4px); }
+      .elc-card {
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        padding: 16px 18px;
+      }
+    `}</style>
+  );
 }
-function studentMaterials(){
-return `<div class="header"><div><h2>Materi Bahasa Inggris</h2><p class="muted">Bahan belajar dari guru.</p></div></div>${db.materials.length?db.materials.map(m=>`<div class="card" style="margin-bottom:10px"><h3>${esc(m.title)}</h3>${m.desc?`<p class="muted">${esc(m.desc)}</p>`:""}${m.link?`<a class="link" href="${esc(m.link)}" target="_blank" rel="noopener">Buka materi ↗</a>`:""}<div class="meta">${dateText(m.date)}</div></div>`).join(""):`<div class="empty">Belum ada materi dari guru.</div>`}`;
+
+function Sidebar({ tabs, active, setActive, title, name, onLogout, accent }) {
+  return (
+    <div style={{ width: 210, flexShrink: 0, paddingTop: 24 }}>
+      <div style={{ padding: "0 8px 20px 22px" }}>
+        <div style={{ fontSize: 11, letterSpacing: 0.5, color: "var(--ink-soft)" }}>English Class Online</div>
+        <h2 style={{ fontSize: 19, marginTop: 2 }}>{title}</h2>
+        <div style={{ fontSize: 13, color: "var(--ink-soft)", marginTop: 4 }}>{name}</div>
+      </div>
+      {tabs.map((t) => (
+        <button
+          key={t.key}
+          className={`elc-tab ${active === t.key ? "active" : ""}`}
+          style={{ background: t.color }}
+          onClick={() => setActive(t.key)}
+        >
+          {t.icon}
+          {t.label}
+        </button>
+      ))}
+      <button
+        onClick={onLogout}
+        className="elc-tab"
+        style={{ background: "var(--ink-soft)", marginTop: 20 }}
+      >
+        <LogOut size={16} /> Keluar
+      </button>
+    </div>
+  );
 }
-function studentAssignments(){
-return `<div class="header"><div><h2>Tugas</h2><p class="muted">Kerjakan dan kumpulkan tugas.</p></div></div>${db.assignments.length?db.assignments.map(a=>{
-const my=db.submissions.find(s=>s.assignmentId===a.id&&s.studentName===session.name);
-const expired=a.due && new Date(a.due+"T23:59:59")<new Date();
-return `<div class="card" style="margin-bottom:12px"><h3>${esc(a.title)}</h3><p class="muted">${esc(a.desc)}</p>${a.due?`<div class="meta">Tenggat: ${esc(a.due)}${expired?" · Tenggat lewat":""}</div>`:""}
-<div style="margin-top:12px">${my?`<div class="notice">✓ Sudah dikumpulkan pada ${dateText(my.submittedAt)}</div><div class="submission"><strong>Jawaban</strong><div style="white-space:pre-wrap;margin-top:6px">${esc(my.content)}</div></div>${my.score!=null?`<div style="margin-top:12px" class="score">Nilai: ${my.score}</div>${my.feedback?`<div class="muted">Catatan guru: ${esc(my.feedback)}</div>`:""}`:`<textarea id="ans-${a.id}" class="textarea" placeholder="Tulis jawabanmu di sini..." ${expired?"disabled":""}></textarea><button class="btn sage" style="margin-top:8px" onclick="submitTask('${a.id}')" ${expired?"disabled":""}>Kumpulkan tugas</button>${expired?`<div class="meta" style="color:var(--coral)">Tugas sudah melewati tenggat.</div>`:""}`}</div></div>`;
-}).join(""):`<div class="empty">Belum ada tugas dari guru.</div>`}`;
+
+/* ------------------------------ Role gate ------------------------------ */
+
+function RoleGate({ onEnter }) {
+  const [name, setName] = useState("");
+  const [pick, setPick] = useState(null);
+
+  return (
+    <div className="elc-root">
+      <GlobalStyle />
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--ink)",
+          padding: 20,
+        }}
+      >
+        <div
+          style={{
+            background: "var(--page)",
+            width: 380,
+            borderRadius: 6,
+            padding: "34px 32px",
+            boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+          }}
+        >
+          <div
+            style={{
+              background: "var(--mustard)",
+              color: "#2a2109",
+              display: "inline-block",
+              padding: "4px 10px",
+              borderRadius: 3,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 0.5,
+              transform: "rotate(-2deg)",
+              marginBottom: 14,
+            }}
+          >
+            BUKU BAHASA INGGRIS
+          </div>
+          <h1 style={{ fontSize: 26, lineHeight: 1.25, marginBottom: 6 }}>
+            English Class Online
+          </h1>
+          <p style={{ color: "var(--ink-soft)", fontSize: 14, marginBottom: 22 }}>
+            Ruang belajar bahasa Inggris untuk pertemuan jarak jauh — materi, tugas, dan nilai dalam satu tempat.
+          </p>
+
+          <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
+            Nama kamu
+          </label>
+          <input
+            className="elc-input"
+            placeholder="Tulis nama lengkap"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            style={{ marginBottom: 18 }}
+          />
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              className="elc-btn elc-btn-sage"
+              style={{ flex: 1, justifyContent: "center", padding: "12px 0" }}
+              onClick={() => setPick("student")}
+              disabled={pick && pick !== "student"}
+            >
+              Saya Siswa
+            </button>
+            <button
+              className="elc-btn elc-btn-primary"
+              style={{ flex: 1, justifyContent: "center", padding: "12px 0" }}
+              onClick={() => setPick("teacher")}
+              disabled={pick && pick !== "teacher"}
+            >
+              Saya Guru
+            </button>
+          </div>
+
+          {pick && (
+            <button
+              className="elc-btn elc-btn-mustard"
+              style={{ width: "100%", justifyContent: "center", marginTop: 14, padding: "11px 0" }}
+              disabled={!name.trim()}
+              onClick={() => onEnter(pick, name.trim())}
+            >
+              Masuk sebagai {pick === "teacher" ? "Guru" : "Siswa"} →
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
-function submitTask(id){
-const a=db.assignments.find(x=>x.id===id),el=document.getElementById("ans-"+id),answer=el.value.trim();
-if(!answer)return alert("Tulis jawaban terlebih dahulu.");
-if(a.due&&new Date(a.due+"T23:59:59")<new Date())return alert("Tugas sudah melewati tenggat.");
-if(db.submissions.some(s=>s.assignmentId===id&&s.studentName===session.name))return alert("Tugas ini sudah dikumpulkan.");
-db.submissions.push({id:uid(),assignmentId:id,studentName:session.name,content:answer,submittedAt:new Date().toISOString(),score:null,feedback:""});save();renderApp();
+
+/* ------------------------------ Teacher app ----------------------------- */
+
+function TeacherApp({ name, onLogout }) {
+  const [tab, setTab] = useState("materi");
+  const [materials, setMaterials] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const refreshAll = useCallback(async () => {
+    setLoading(true);
+    const [m, a, s] = await Promise.all([
+      loadList("materials"),
+      loadList("assignments"),
+      loadList("submissions"),
+    ]);
+    setMaterials(m);
+    setAssignments(a);
+    setSubmissions(s);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { refreshAll(); }, [refreshAll]);
+
+  const tabs = [
+    { key: "materi", label: "Materi", icon: <BookOpen size={16} />, color: "var(--sage)" },
+    { key: "tugas", label: "Tugas", icon: <ClipboardList size={16} />, color: "var(--mustard)" },
+    { key: "nilai", label: "Nilai", icon: <Award size={16} />, color: "var(--coral)" },
+  ];
+
+  return (
+    <div className="elc-root">
+      <GlobalStyle />
+      <div style={{ display: "flex", minHeight: "100vh", background: "var(--ink)" }}>
+        <Sidebar tabs={tabs} active={tab} setActive={setTab} title="Panel Guru" name={name} onLogout={onLogout} />
+        <div style={{ flex: 1, padding: "24px 28px 40px 0" }}>
+          <div className="elc-page">
+            {loading ? (
+              <div style={{ color: "var(--ink-soft)" }}>Memuat data…</div>
+            ) : tab === "materi" ? (
+              <MateriTeacher materials={materials} setMaterials={setMaterials} />
+            ) : tab === "tugas" ? (
+              <TugasTeacher
+                assignments={assignments}
+                setAssignments={setAssignments}
+                submissions={submissions}
+                setSubmissions={setSubmissions}
+              />
+            ) : (
+              <NilaiTeacher
+                assignments={assignments}
+                submissions={submissions}
+                setSubmissions={setSubmissions}
+                onRefresh={refreshAll}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
-render();
-</script>
-</body>
-</html>
+
+function MateriTeacher({ materials, setMaterials }) {
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [link, setLink] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const add = async () => {
+    if (!title.trim()) return;
+    setSaving(true);
+    const item = { id: uid(), title: title.trim(), desc: desc.trim(), link: link.trim(), date: new Date().toISOString() };
+    const updated = [item, ...materials];
+    await saveList("materials", updated);
+    setMaterials(updated);
+    setTitle(""); setDesc(""); setLink("");
+    setSaving(false);
+  };
+
+  const remove = async (id) => {
+    const updated = materials.filter((m) => m.id !== id);
+    await saveList("materials", updated);
+    setMaterials(updated);
+  };
+
+  return (
+    <div>
+      <h3 style={{ fontSize: 20, marginBottom: 4 }}>Materi Bahasa Inggris</h3>
+      <p style={{ color: "var(--ink-soft)", fontSize: 13.5, marginBottom: 18 }}>
+        Bagikan bahan bacaan, video, atau catatan untuk siswa.
+      </p>
+
+      <div className="elc-card" style={{ marginBottom: 22 }}>
+        <input className="elc-input" placeholder="Judul materi (contoh: Simple Past Tense)" value={title} onChange={(e) => setTitle(e.target.value)} style={{ marginBottom: 10 }} />
+        <textarea className="elc-textarea" placeholder="Penjelasan singkat / ringkasan materi" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ marginBottom: 10 }} />
+        <input className="elc-input" placeholder="Tautan (opsional) — video, PDF, dsb." value={link} onChange={(e) => setLink(e.target.value)} style={{ marginBottom: 12 }} />
+        <button className="elc-btn elc-btn-sage" onClick={add} disabled={saving || !title.trim()}>
+          <Plus size={15} /> Tambah materi
+        </button>
+      </div>
+
+      {materials.length === 0 ? (
+        <EmptyNote text="Belum ada materi. Tambahkan materi pertama di atas." />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {materials.map((m) => (
+            <div key={m.id} className="elc-card" style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <div>
+                <div style={{ fontWeight: 600 }}>{m.title}</div>
+                {m.desc && <div style={{ fontSize: 13.5, color: "var(--ink-soft)", marginTop: 3 }}>{m.desc}</div>}
+                {m.link && (
+                  <a href={m.link} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "var(--sage-deep)", display: "inline-flex", alignItems: "center", gap: 4, marginTop: 6 }}>
+                    <LinkIcon size={12} /> Buka tautan
+                  </a>
+                )}
+                <div style={{ fontSize: 12, color: "#9aa5ad", marginTop: 6 }}>{fmtDate(m.date)}</div>
+              </div>
+              <button className="elc-btn elc-btn-danger" onClick={() => remove(m.id)} title="Hapus"><Trash2 size={16} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TugasTeacher({ assignments, setAssignments, submissions, setSubmissions }) {
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [due, setDue] = useState("");
+  const [openId, setOpenId] = useState(null);
+
+  const add = async () => {
+    if (!title.trim()) return;
+    const item = { id: uid(), title: title.trim(), desc: desc.trim(), due, createdAt: new Date().toISOString() };
+    const updated = [item, ...assignments];
+    await saveList("assignments", updated);
+    setAssignments(updated);
+    setTitle(""); setDesc(""); setDue("");
+  };
+
+  const remove = async (id) => {
+    const updated = assignments.filter((a) => a.id !== id);
+    await saveList("assignments", updated);
+    setAssignments(updated);
+    const subUpdated = submissions.filter((s) => s.assignmentId !== id);
+    await saveList("submissions", subUpdated);
+    setSubmissions(subUpdated);
+  };
+
+  const gradeOne = async (subId, score, feedback) => {
+    const updated = submissions.map((s) =>
+      s.id === subId ? { ...s, score: score === "" ? null : Number(score), feedback, gradedAt: new Date().toISOString() } : s
+    );
+    await saveList("submissions", updated);
+    setSubmissions(updated);
+  };
+
+  return (
+    <div>
+      <h3 style={{ fontSize: 20, marginBottom: 4 }}>Tugas</h3>
+      <p style={{ color: "var(--ink-soft)", fontSize: 13.5, marginBottom: 18 }}>
+        Buat tugas baru dan periksa jawaban siswa.
+      </p>
+
+      <div className="elc-card" style={{ marginBottom: 22 }}>
+        <input className="elc-input" placeholder="Judul tugas" value={title} onChange={(e) => setTitle(e.target.value)} style={{ marginBottom: 10 }} />
+        <textarea className="elc-textarea" placeholder="Instruksi tugas untuk siswa" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ marginBottom: 10 }} />
+        <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+          <label style={{ fontSize: 13, color: "var(--ink-soft)" }}>Tenggat:</label>
+          <input type="date" className="elc-input" value={due} onChange={(e) => setDue(e.target.value)} style={{ width: 170 }} />
+        </div>
+        <button className="elc-btn elc-btn-mustard" onClick={add} disabled={!title.trim()}>
+          <Plus size={15} /> Buat tugas
+        </button>
+      </div>
+
+      {assignments.length === 0 ? (
+        <EmptyNote text="Belum ada tugas. Buat tugas pertama di atas." />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {assignments.map((a) => {
+            const subs = submissions.filter((s) => s.assignmentId === a.id);
+            const isOpen = openId === a.id;
+            return (
+              <div key={a.id} className="elc-card">
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{a.title}</div>
+                    <div style={{ fontSize: 13.5, color: "var(--ink-soft)", marginTop: 3 }}>{a.desc}</div>
+                    <div style={{ fontSize: 12, color: "#9aa5ad", marginTop: 6, display: "flex", gap: 12 }}>
+                      {a.due && <span><Clock size={12} style={{ verticalAlign: -1 }} /> Tenggat {a.due}</span>}
+                      <span>{subs.length} pengumpulan</span>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+                    <button className="elc-btn elc-btn-ghost" onClick={() => setOpenId(isOpen ? null : a.id)}>
+                      {isOpen ? "Tutup" : "Lihat jawaban"}
+                    </button>
+                    <button className="elc-btn elc-btn-danger" onClick={() => remove(a.id)} title="Hapus"><Trash2 size={16} /></button>
+                  </div>
+                </div>
+
+                {isOpen && (
+                  <div style={{ marginTop: 14, borderTop: "1px solid var(--rule)", paddingTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                    {subs.length === 0 ? (
+                      <div style={{ fontSize: 13.5, color: "var(--ink-soft)" }}>Belum ada siswa yang mengumpulkan.</div>
+                    ) : (
+                      subs.map((s) => (
+                        <SubmissionRow key={s.id} sub={s} onGrade={gradeOne} />
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SubmissionRow({ sub, onGrade }) {
+  const [score, setScore] = useState(sub.score ?? "");
+  const [feedback, setFeedback] = useState(sub.feedback ?? "");
+
+  return (
+    <div style={{ background: "var(--paper)", borderRadius: 6, padding: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+        <div style={{ fontWeight: 600, fontSize: 14 }}>{sub.studentName}</div>
+        <div style={{ fontSize: 12, color: "#8b96a0" }}>{fmtDate(sub.submittedAt)}</div>
+      </div>
+      <div style={{ fontSize: 13.5, whiteSpace: "pre-wrap", marginBottom: 10 }}>{sub.content}</div>
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <input
+          className="elc-input"
+          type="number" min="0" max="100"
+          placeholder="Nilai"
+          value={score}
+          onChange={(e) => setScore(e.target.value)}
+          style={{ width: 80 }}
+        />
+        <input
+          className="elc-input"
+          placeholder="Catatan untuk siswa (opsional)"
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+        />
+        <button className="elc-btn elc-btn-primary" onClick={() => onGrade(sub.id, score, feedback)}>
+          Simpan
+        </button>
+      </div>
+      {sub.gradedAt && (
+        <div style={{ fontSize: 12, color: "var(--sage-deep)", marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
+          <CheckCircle2 size={13} /> Sudah dinilai
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NilaiTeacher({ assignments, submissions, onRefresh }) {
+  const [filterAssignment, setFilterAssignment] = useState("all");
+
+  const rows = submissions
+    .filter((s) => filterAssignment === "all" || s.assignmentId === filterAssignment)
+    .map((s) => {
+      const a = assignments.find((x) => x.id === s.assignmentId);
+      return { ...s, assignmentTitle: a ? a.title : "(tugas dihapus)" };
+    })
+    .sort((a, b) => (a.assignmentTitle > b.assignmentTitle ? 1 : -1));
+
+  const exportExcel = () => {
+    const data = rows.map((r) => ({
+      "Nama Siswa": r.studentName,
+      "Tugas": r.assignmentTitle,
+      "Tanggal Kumpul": fmtDate(r.submittedAt),
+      "Nilai": r.score ?? "",
+      "Catatan": r.feedback ?? "",
+      "Status": r.score != null ? "Sudah Dinilai" : "Belum Dinilai",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [{ wch: 20 }, { wch: 26 }, { wch: 18 }, { wch: 8 }, { wch: 30 }, { wch: 14 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Nilai");
+    const label = filterAssignment === "all" ? "Semua_Tugas" : (assignments.find(a => a.id === filterAssignment)?.title || "Tugas").replace(/\s+/g, "_");
+    XLSX.writeFile(wb, `Nilai_English_${label}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+        <div>
+          <h3 style={{ fontSize: 20, marginBottom: 4 }}>Rekap Nilai</h3>
+          <p style={{ color: "var(--ink-soft)", fontSize: 13.5 }}>Ekspor nilai langsung ke Excel.</p>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="elc-btn elc-btn-ghost" onClick={onRefresh}><RefreshCw size={14} /> Muat ulang</button>
+          <button className="elc-btn elc-btn-primary" onClick={exportExcel} disabled={rows.length === 0}>
+            <Download size={15} /> Ekspor ke Excel
+          </button>
+        </div>
+      </div>
+
+      <select className="elc-input" style={{ width: 260, marginBottom: 16 }} value={filterAssignment} onChange={(e) => setFilterAssignment(e.target.value)}>
+        <option value="all">Semua tugas</option>
+        {assignments.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
+      </select>
+
+      {rows.length === 0 ? (
+        <EmptyNote text="Belum ada pengumpulan tugas untuk ditampilkan." />
+      ) : (
+        <div className="elc-card" style={{ padding: 0, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
+            <thead>
+              <tr style={{ background: "var(--paper)", textAlign: "left" }}>
+                <Th>Siswa</Th><Th>Tugas</Th><Th>Kumpul</Th><Th>Nilai</Th><Th>Status</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} style={{ borderTop: "1px solid var(--rule)" }}>
+                  <Td>{r.studentName}</Td>
+                  <Td>{r.assignmentTitle}</Td>
+                  <Td>{fmtDate(r.submittedAt)}</Td>
+                  <Td>{r.score ?? "—"}</Td>
+                  <Td>
+                    <span style={{ color: r.score != null ? "var(--sage-deep)" : "var(--coral)", fontWeight: 600 }}>
+                      {r.score != null ? "Dinilai" : "Belum"}
+                    </span>
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const Th = ({ children }) => <th style={{ padding: "10px 14px", fontWeight: 600 }}>{children}</th>;
+const Td = ({ children }) => <td style={{ padding: "10px 14px" }}>{children}</td>;
+
+/* ------------------------------ Student app ----------------------------- */
+
+function StudentApp({ name, onLogout }) {
+  const [tab, setTab] = useState("materi");
+  const [materials, setMaterials] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const refreshAll = useCallback(async () => {
+    setLoading(true);
+    const [m, a, s] = await Promise.all([
+      loadList("materials"),
+      loadList("assignments"),
+      loadList("submissions"),
+    ]);
+    setMaterials(m);
+    setAssignments(a);
+    setSubmissions(s);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { refreshAll(); }, [refreshAll]);
+
+  const tabs = [
+    { key: "materi", label: "Materi", icon: <BookOpen size={16} />, color: "var(--sage)" },
+    { key: "tugas", label: "Tugas", icon: <ClipboardList size={16} />, color: "var(--mustard)" },
+  ];
+
+  const mySubmissions = submissions.filter((s) => s.studentName === name);
+
+  return (
+    <div className="elc-root">
+      <GlobalStyle />
+      <div style={{ display: "flex", minHeight: "100vh", background: "var(--ink)" }}>
+        <Sidebar tabs={tabs} active={tab} setActive={setTab} title="Panel Siswa" name={name} onLogout={onLogout} />
+        <div style={{ flex: 1, padding: "24px 28px 40px 0" }}>
+          <div className="elc-page">
+            {loading ? (
+              <div style={{ color: "var(--ink-soft)" }}>Memuat data…</div>
+            ) : tab === "materi" ? (
+              <MateriStudent materials={materials} />
+            ) : (
+              <TugasStudent
+                assignments={assignments}
+                mySubmissions={mySubmissions}
+                studentName={name}
+                submissions={submissions}
+                setSubmissions={setSubmissions}
+                onRefresh={refreshAll}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MateriStudent({ materials }) {
+  return (
+    <div>
+      <h3 style={{ fontSize: 20, marginBottom: 4 }}>Materi Bahasa Inggris</h3>
+      <p style={{ color: "var(--ink-soft)", fontSize: 13.5, marginBottom: 18 }}>Bahan belajar dari gurumu.</p>
+      {materials.length === 0 ? (
+        <EmptyNote text="Belum ada materi yang dibagikan guru." />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {materials.map((m) => (
+            <div key={m.id} className="elc-card">
+              <div style={{ fontWeight: 600 }}>{m.title}</div>
+              {m.desc && <div style={{ fontSize: 13.5, color: "var(--ink-soft)", marginTop: 3 }}>{m.desc}</div>}
+              {m.link && (
+                <a href={m.link} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "var(--sage-deep)", display: "inline-flex", alignItems: "center", gap: 4, marginTop: 6 }}>
+                  <LinkIcon size={12} /> Buka tautan
+                </a>
+              )}
+              <div style={{ fontSize: 12, color: "#9aa5ad", marginTop: 6 }}>{fmtDate(m.date)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TugasStudent({ assignments, mySubmissions, studentName, submissions, setSubmissions, onRefresh }) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+        <h3 style={{ fontSize: 20 }}>Tugas</h3>
+        <button className="elc-btn elc-btn-ghost" onClick={onRefresh}><RefreshCw size={14} /> Muat ulang</button>
+      </div>
+      <p style={{ color: "var(--ink-soft)", fontSize: 13.5, marginBottom: 18 }}>Kerjakan dan kumpulkan tugas di bawah ini.</p>
+
+      {assignments.length === 0 ? (
+        <EmptyNote text="Belum ada tugas dari guru." />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {assignments.map((a) => {
+            const mySub = mySubmissions.find((s) => s.assignmentId === a.id);
+            return (
+              <AssignmentCard
+                key={a.id}
+                assignment={a}
+                mySub={mySub}
+                studentName={studentName}
+                submissions={submissions}
+                setSubmissions={setSubmissions}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AssignmentCard({ assignment, mySub, studentName, submissions, setSubmissions }) {
+  const [answer, setAnswer] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const submit = async () => {
+    if (!answer.trim()) return;
+    setSending(true);
+    const item = {
+      id: uid(),
+      assignmentId: assignment.id,
+      studentName,
+      content: answer.trim(),
+      submittedAt: new Date().toISOString(),
+      score: null,
+      feedback: "",
+    };
+    const updated = [...submissions, item];
+    await saveList("submissions", updated);
+    setSubmissions(updated);
+    setAnswer("");
+    setSending(false);
+  };
+
+  return (
+    <div className="elc-card">
+      <div style={{ fontWeight: 600 }}>{assignment.title}</div>
+      <div style={{ fontSize: 13.5, color: "var(--ink-soft)", marginTop: 3 }}>{assignment.desc}</div>
+      {assignment.due && (
+        <div style={{ fontSize: 12, color: "#9aa5ad", marginTop: 6 }}>
+          <Clock size={12} style={{ verticalAlign: -1 }} /> Tenggat {assignment.due}
+        </div>
+      )}
+
+      <div style={{ marginTop: 12, borderTop: "1px solid var(--rule)", paddingTop: 12 }}>
+        {mySub ? (
+          <div>
+            <div style={{ fontSize: 13, color: "var(--sage-deep)", display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+              <CheckCircle2 size={14} /> Sudah dikumpulkan · {fmtDate(mySub.submittedAt)}
+            </div>
+            <div style={{ background: "var(--paper)", borderRadius: 6, padding: 10, fontSize: 13.5, whiteSpace: "pre-wrap", marginBottom: 8 }}>
+              {mySub.content}
+            </div>
+            {mySub.score != null ? (
+              <div style={{ fontSize: 13.5 }}>
+                <strong>Nilai: {mySub.score}</strong>
+                {mySub.feedback && <div style={{ color: "var(--ink-soft)", marginTop: 4 }}>Catatan guru: {mySub.feedback}</div>}
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: "var(--mustard)", fontWeight: 600 }}>Menunggu penilaian guru</div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <textarea
+              className="elc-textarea"
+              placeholder="Tulis jawabanmu di sini…"
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              style={{ marginBottom: 10 }}
+            />
+            <button className="elc-btn elc-btn-sage" onClick={submit} disabled={sending || !answer.trim()}>
+              <Send size={14} /> Kumpulkan tugas
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------- Bits ---------------------------------- */
+
+function EmptyNote({ text }) {
+  return (
+    <div style={{ fontSize: 13.5, color: "var(--ink-soft)", background: "var(--paper)", borderRadius: 6, padding: 14, border: "1px dashed var(--rule)" }}>
+      {text}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);</script></body></html>
